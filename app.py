@@ -3,6 +3,7 @@
 
 streamlit_code = """
 import streamlit as st
+st.write("✅ app.py is running")
 import pandas as pd
 
 st.set_page_config(page_title="F1 Dashboard", layout="wide")
