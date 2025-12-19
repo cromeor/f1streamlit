@@ -10,13 +10,32 @@ st.title("🏎️ Formula 1 Interactive Dashboard")
 
 @st.cache_data
 def load_data():
-    races = pd.read_csv("data/races.csv")
-    results = pd.read_csv("data/results.csv")
-    drivers = pd.read_csv("data/drivers.csv")
-    circuits = pd.read_csv("data/circuits.csv")
+    races = pd.read_csv(
+        "data/races.csv",
+        usecols=["raceId", "year", "name", "circuitId"]
+    )
+
+    results = pd.read_csv(
+        "data/results.csv",
+        usecols=["raceId", "driverId", "positionOrder", "points", "grid", "laps"]
+    )
+
+    drivers = pd.read_csv(
+        "data/drivers.csv",
+        usecols=["driverId", "forename", "surname"]
+    )
+
+    circuits = pd.read_csv(
+        "data/circuits.csv",
+        usecols=["circuitId", "name", "country"]
+    )
+
     return races, results, drivers, circuits
 
+
 races, results, drivers, circuits = load_data()
+with st.spinner("Loading Formula 1 data..."):
+    races, results, drivers, circuits = load_data()
 
 st.sidebar.header("Filters")
 
