@@ -3,6 +3,8 @@ import pandas as pd
 
 st.set_page_config(page_title="F1 Dashboard", layout="wide")
 st.title("🏆 Formula 1 — Season Leaderboard")
+st.sidebar.title("📌 Navigation")
+
 
 @st.cache_data
 def load_data():
