@@ -1,6 +1,11 @@
 import streamlit as st
 
-st.set_page_config(page_title="Test App", layout="wide")
+st.set_page_config(page_title="F1 Dashboard", layout="wide")
 
-st.title("✅ Streamlit is working")
-st.write("If you see this, deployment is healthy.")
+st.title("🏎️ Formula 1 Dashboard")
+
+st.sidebar.header("Filters")
+st.sidebar.selectbox("Season", [2022, 2023, 2024])
+st.sidebar.selectbox("Race", ["Bahrain GP", "Monaco GP", "British GP"])
+
+st.success("UI loaded successfully")
