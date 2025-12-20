@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Pit Stops Analysis", layout="wide")
 st.title("🔧 Pit Stops Analysis")
 
-# =========================
-# Load data (SAFE)
-# =========================
+st.info(
+    "ℹ️ Pit stop data is only available from the 2011 season onward. "
+    "Earlier seasons do not have recorded pit stop information."
+)
+
 @st.cache_data
 def load_data():
     races = pd.read_csv(
@@ -30,38 +31,37 @@ def load_data():
 with st.spinner("Loading pit stop data..."):
     races, pit_stops, drivers = load_data()
 
-# =========================
-# Sidebar filters
-# =========================
-st.sidebar.header("Filters")
+# Only seasons with pit stop data
+available_years = sorted(races[races["year"] >= 2011]["year"].unique())
 
-season = st.sidebar.selectbox(
+season = st.selectbox(
     "Select Season",
-    sorted(races["year"].unique())
+    available_years
 )
 
 races_season = races[races["year"] == season]
 
-race_name = st.sidebar.selectbox(
+race_name = st.selectbox(
     "Select Race",
-    races_season["name"].values
+    races_season["name"]
 )
 
 race_id = races_season[
     races_season["name"] == race_name
 ]["raceId"].iloc[0]
 
-# =========================
-# Prepare pit stop stats
-# =========================
 pit_race = pit_stops[pit_stops["raceId"] == race_id]
+
+if pit_race.empty:
+    st.warning("No pit stop data available for this race.")
+    st.stop()
 
 pit_summary = (
     pit_race
     .groupby("driverId", as_index=False)
     .agg(
-        Avg_Pit_Time_ms=("milliseconds", "mean"),
-        Pit_Stops=("milliseconds", "count")
+        Pit_Stops=("milliseconds", "count"),
+        Avg_Pit_Time_ms=("milliseconds", "mean")
     )
     .merge(drivers, on="driverId", how="left")
 )
@@ -74,26 +74,17 @@ pit_summary["Avg_Pit_Time_sec"] = (
     pit_summary["Avg_Pit_Time_ms"] / 1000
 )
 
-# =========================
-# Display table
-# =========================
-st.subheader(f"📋 Pit Stop Summary — {race_name} ({season})")
-
-table = pit_summary[
-    ["Driver", "Pit_Stops", "Avg_Pit_Time_sec"]
-].sort_values("Avg_Pit_Time_sec")
+st.subheader(f"Pit Stops — {race_name} ({season})")
 
 st.dataframe(
-    table,
+    pit_summary[
+        ["Driver", "Pit_Stops", "Avg_Pit_Time_sec"]
+    ].sort_values("Avg_Pit_Time_sec"),
     use_container_width=True,
     hide_index=True
 )
 
-# =========================
-# Charts
-# =========================
-st.subheader("📊 Average Pit Stop Time per Driver (seconds)")
-
+st.subheader("📊 Average Pit Stop Time (seconds)")
 st.bar_chart(
-    data=table.set_index("Driver")["Avg_Pit_Time_sec"]
+    pit_summary.set_index("Driver")["Avg_Pit_Time_sec"]
 )
