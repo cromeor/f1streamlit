@@ -72,9 +72,6 @@ if mode == "Season Standings":
 # RACE LEADERBOARD + MAP
 # =========================
 else:
-    # -------------------------
-    # Race selector
-    # -------------------------
     race_name = st.selectbox(
         "Select Race",
         races_season["name"].tolist()
@@ -84,9 +81,6 @@ else:
         races_season["name"] == race_name
     ]["raceId"].iloc[0]
 
-    # -------------------------
-    # Race leaderboard
-    # -------------------------
     race_results = (
         results[results["raceId"] == race_id]
         .merge(drivers, on="driverId")
@@ -113,12 +107,12 @@ else:
     )
 
     # -------------------------
-    # Build winners for map
+    # Winner per race
     # -------------------------
     winners = (
         results[results["positionOrder"] == 1]
         .merge(drivers, on="driverId")
-        .assign(Winner=lambda df: df["forename"] + " " + df["surname"])
+        .assign(Winner=lambda d: d["forename"] + " " + d["surname"])
         [["raceId", "Winner"]]
     )
 
@@ -128,35 +122,3 @@ else:
         .merge(winners, on="raceId", how="left")
         .dropna(subset=["lat", "lng"])
     )
-
-    # -------------------------
-    # Map (hover-only, SAFE)
-    # -------------------------
-    st.subheader("🌍 Race Locations (hover to see winner)")
-
-    layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=races_map,
-        get_position=["lng", "lat"],
-        get_radius=120000,
-        get_fill_color=[200, 30, 0, 160],
-        pickable=True,
-    )
-
-    deck = pdk.Deck(
-        layers=[layer],
-        initial_view_state=pdk.ViewState(
-            latitude=20,
-            longitude=0,
-            zoom=1.2,
-        ),
-        tooltip={
-            "text": (
-                "{name_race}\n"
-                "{name_circuit}, {country}\n"
-                "🏆 Winner: {Winner}"
-            )
-        },
-    )
-
-    st.pydeck_chart(deck, use_container_width=True)
