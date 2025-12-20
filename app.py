@@ -6,6 +6,7 @@ st.set_page_config(
 )
 
 st.title("🏎️ Formula 1 Dashboard")
+
 st.markdown(
     """
     Use the **sidebar** to navigate between pages.
