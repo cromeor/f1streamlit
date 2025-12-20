@@ -129,13 +129,19 @@ def render():
             },
         )
 
-        event = st.pydeck_chart(deck, use_container_width=True)
+# ---- Dropdown selector (single source of truth)
+st.subheader("🏁 Select Race")
 
-        # ---- Decide selected race
-        selected_race_name = dropdown_race
+selected_race_name = st.selectbox(
+    "Race",
+    races_map["name_race"].tolist(),
+    index=0
+)
 
-        if event and "objects" in event and len(event["objects"]) > 0:
-            selected_race_name = event["objects"][0]["name_race"]
+selected_race_id = races_map[
+    races_map["name_race"] == selected_race_name
+]["raceId"].iloc[0]
+
 
         selected_race_id = races_map[
             races_map["name_race"] == selected_race_name
