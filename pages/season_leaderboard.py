@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import pydeck as pdk
+
 
 def render():
     st.header("🏆 Formula 1 — Leaderboards")
@@ -11,7 +13,12 @@ def render():
     def load_data():
         races = pd.read_csv(
             "data/races.csv",
-            usecols=["raceId", "year", "name"]
+            usecols=["raceId", "year", "name", "circuitId"]
+        )
+
+        circuits = pd.read_csv(
+            "data/circuits.csv",
+            usecols=["circuitId", "name", "location", "country", "lat", "lng"]
         )
 
         results = pd.read_csv(
@@ -24,9 +31,9 @@ def render():
             usecols=["driverId", "forename", "surname"]
         )
 
-        return races, results, drivers
+        return races, circuits, results, drivers
 
-    races, results, drivers = load_data()
+    races, circuits, results, drivers = load_data()
 
     # =========================
     # Controls
@@ -45,9 +52,10 @@ def render():
     races_season = races[races["year"] == season]
 
     # =========================
-    # SEASON LEADERBOARD
+    # SEASON STANDINGS
     # =========================
     if leaderboard_type == "Season Standings":
+
         season_results = results.merge(
             races_season[["raceId"]],
             on="raceId",
@@ -78,20 +86,63 @@ def render():
         )
 
     # =========================
-    # RACE LEADERBOARD
+    # RACE LEADERBOARD (MAP + DROPDOWN)
     # =========================
     else:
-        race_name = st.selectbox(
-            "Select Race",
-            races_season["name"]
+        # Merge race + circuit location
+        races_map = (
+            races_season
+            .merge(circuits, on="circuitId", how="left")
+            .dropna(subset=["lat", "lng"])
         )
 
-        race_id = races_season[
-            races_season["name"] == race_name
+        # ---- Dropdown selector (fallback)
+        st.subheader("🏁 Select Race")
+        dropdown_race = st.selectbox(
+            "Race (dropdown)",
+            races_map["name"].tolist(),
+            index=0
+        )
+
+        # ---- World map selector
+        st.subheader("🌍 Or click a race on the map")
+
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=races_map,
+            get_position=["lng", "lat"],
+            get_radius=120000,
+            get_fill_color=[200, 30, 0, 160],
+            pickable=True,
+        )
+
+        deck = pdk.Deck(
+            layers=[layer],
+            initial_view_state=pdk.ViewState(
+                latitude=20,
+                longitude=0,
+                zoom=1.2,
+            ),
+            tooltip={
+                "text": "{name}\n{location}, {country}"
+            },
+        )
+
+        event = st.pydeck_chart(deck, use_container_width=True)
+
+        # ---- Decide selected race
+        selected_race_name = dropdown_race
+
+        if event and "objects" in event and len(event["objects"]) > 0:
+            selected_race_name = event["objects"][0]["name"]
+
+        selected_race_id = races_map[
+            races_map["name"] == selected_race_name
         ]["raceId"].iloc[0]
 
+        # ---- Leaderboard
         race_results = (
-            results[results["raceId"] == race_id]
+            results[results["raceId"] == selected_race_id]
             .merge(drivers, on="driverId", how="left")
             .sort_values("positionOrder")
         )
@@ -100,7 +151,7 @@ def render():
             race_results["forename"] + " " + race_results["surname"]
         )
 
-        st.subheader(f"🏁 {race_name} ({season}) — Race Leaderboard")
+        st.subheader(f"🏁 {selected_race_name} ({season}) — Race Leaderboard")
 
         st.dataframe(
             race_results[
