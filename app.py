@@ -5,16 +5,16 @@ import pandas as pd
 # Page setup
 # =========================
 st.set_page_config(page_title="F1 Dashboard", layout="wide")
-st.title("🏎️ Formula 1 Leaderboard Dashboard")
+st.title("🏎️ Formula 1 Dashboard")
 
 # =========================
-# Load data (SAFE VERSION)
+# Load data (SAFE)
 # =========================
 @st.cache_data
 def load_data():
     races = pd.read_csv(
         "data/races.csv",
-        usecols=["raceId", "year", "name", "circuitId"]
+        usecols=["raceId", "year", "name"]
     )
 
     results = pd.read_csv(
@@ -45,47 +45,79 @@ season = st.sidebar.selectbox(
 
 races_season = races[races["year"] == season]
 
-race_name = st.sidebar.selectbox(
-    "Select Race",
-    races_season["name"].values
+track = st.sidebar.selectbox(
+    "Select Track (optional)",
+    ["All Tracks"] + sorted(races_season["name"].tolist())
 )
 
 # =========================
-# Get selected race
+# SEASON LEADERBOARD
 # =========================
-race_id = races_season[
-    races_season["name"] == race_name
-]["raceId"].iloc[0]
+season_results = results.merge(
+    races_season[["raceId"]],
+    on="raceId",
+    how="inner"
+)
 
-# =========================
-# Build leaderboard
-# =========================
-leaderboard = (
-    results[results["raceId"] == race_id]
+season_standings = (
+    season_results
+    .groupby("driverId", as_index=False)
+    .agg(
+        Total_Points=("points", "sum"),
+        Races=("raceId", "count")
+    )
     .merge(drivers, on="driverId", how="left")
-    .sort_values("positionOrder")
+    .sort_values("Total_Points", ascending=False)
 )
 
-leaderboard["Driver"] = (
-    leaderboard["forename"] + " " + leaderboard["surname"]
+season_standings["Driver"] = (
+    season_standings["forename"] + " " + season_standings["surname"]
 )
 
-leaderboard_display = leaderboard[
-    ["positionOrder", "Driver", "grid", "points", "laps"]
-].rename(columns={
-    "positionOrder": "Position",
-    "grid": "Grid",
-    "points": "Points",
-    "laps": "Laps"
-})
+season_table = season_standings[
+    ["Driver", "Total_Points", "Races"]
+]
 
 # =========================
-# Display leaderboard
+# Display logic
 # =========================
-st.subheader(f"🏁 {race_name} ({season}) — Leaderboard")
+if track == "All Tracks":
+    st.subheader(f"🏆 Season Standings — {season}")
 
-st.dataframe(
-    leaderboard_display,
-    use_container_width=True,
-    hide_index=True
-)
+    st.dataframe(
+        season_table,
+        use_container_width=True,
+        hide_index=True
+    )
+
+else:
+    race_id = races_season[
+        races_season["name"] == track
+    ]["raceId"].iloc[0]
+
+    race_results = (
+        results[results["raceId"] == race_id]
+        .merge(drivers, on="driverId", how="left")
+        .sort_values("positionOrder")
+    )
+
+    race_results["Driver"] = (
+        race_results["forename"] + " " + race_results["surname"]
+    )
+
+    race_table = race_results[
+        ["positionOrder", "Driver", "grid", "points", "laps"]
+    ].rename(columns={
+        "positionOrder": "Position",
+        "grid": "Grid",
+        "points": "Points",
+        "laps": "Laps"
+    })
+
+    st.subheader(f"🏁 {track} ({season}) — Race Leaderboard")
+
+    st.dataframe(
+        race_table,
+        use_container_width=True,
+        hide_index=True
+    )
