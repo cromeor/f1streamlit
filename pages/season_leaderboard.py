@@ -89,18 +89,19 @@ def render():
     # RACE LEADERBOARD (MAP + DROPDOWN)
     # =========================
     else:
-        # Merge race + circuit location
+        # Merge races with circuit locations
         races_map = (
             races_season
-            .merge(circuits, on="circuitId", how="left")
+            .merge(circuits, on="circuitId", how="left", suffixes=("_race", "_circuit"))
             .dropna(subset=["lat", "lng"])
         )
 
-        # ---- Dropdown selector (fallback)
+        # ---- Dropdown selector (race names)
         st.subheader("🏁 Select Race")
+
         dropdown_race = st.selectbox(
             "Race (dropdown)",
-            races_map["name"].tolist(),
+            races_map["name_race"].tolist(),
             index=0
         )
 
@@ -124,7 +125,7 @@ def render():
                 zoom=1.2,
             ),
             tooltip={
-                "text": "{name}\n{location}, {country}"
+                "text": "{name_race}\n{name_circuit}, {country}"
             },
         )
 
@@ -134,10 +135,10 @@ def render():
         selected_race_name = dropdown_race
 
         if event and "objects" in event and len(event["objects"]) > 0:
-            selected_race_name = event["objects"][0]["name"]
+            selected_race_name = event["objects"][0]["name_race"]
 
         selected_race_id = races_map[
-            races_map["name"] == selected_race_name
+            races_map["name_race"] == selected_race_name
         ]["raceId"].iloc[0]
 
         # ---- Leaderboard
