@@ -1,6 +1,4 @@
 import streamlit as st
-import pages.season_leaderboard as season
-import pages.pit_stops as pit
 
 st.set_page_config(
     page_title="F1 Dashboard",
@@ -8,14 +6,11 @@ st.set_page_config(
 )
 
 st.title("🏎️ Formula 1 Dashboard")
+st.markdown(
+    """
+    Use the **sidebar** to navigate between pages.
 
-page = st.radio(
-    "Navigate",
-    ["Season Leaderboard", "Pit Stops Analysis"],
-    horizontal=True
+    - 🏆 Season & Race Leaderboards  
+    - 🔧 Pit Stop Analysis (2011+)
+    """
 )
-
-if page == "Season Leaderboard":
-    season.render()
-else:
-    pit.render()
