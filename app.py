@@ -6,11 +6,10 @@ st.sidebar.title("Navigation")
 
 page = st.sidebar.radio(
     "Go to",
-    ["Season Dashboard", "Pit Stops Analysis"]
+    ["Season Leaderboard", "Pit Stops Analysis"]
 )
 
-if page == "Season Dashboard":
-    import pages.season_dashboard
-
+if page == "Season Leaderboard":
+    import pages.season_leaderboard
 else:
     import pages.pit_stops
