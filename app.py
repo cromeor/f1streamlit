@@ -10,6 +10,6 @@ page = st.sidebar.radio(
 )
 
 if page == "Season Leaderboard":
-    import pages.season_leaderboard
+    import pages.season_dashboard
 else:
     import pages.pit_stops
